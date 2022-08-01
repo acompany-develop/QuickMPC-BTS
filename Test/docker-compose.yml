@@ -1,0 +1,58 @@
+version: "3.3"
+services:
+  dev_bts:
+    tty: true # 起動しっぱなし
+    build:
+      context: ../
+      dockerfile: src/BeaverTripleService/Dockerfile
+      target: dev
+    ports:
+      - "127.0.0.1:64001:54000"
+    networks:
+      shared-network:
+        ipv4_address: 10.0.4.1
+
+  small_bts:
+    tty: true # 起動しっぱなし
+    build:
+      context: ../
+      dockerfile: src/BeaverTripleService/Dockerfile
+      target: small
+    volumes:
+      - type: bind
+        source: ../src/BeaverTripleService
+        target: /QuickMPC-BTS
+      - type: bind
+        source: ../Config
+        target: /QuickMPC-BTS/Config
+      - type: bind
+        source: ../src/Proto
+        target: /Proto
+
+  medium_bts:
+    tty: true # 起動しっぱなし
+    build:
+      context: ../
+      dockerfile: src/BeaverTripleService/Dockerfile
+      target: medium
+    expose:
+      - "54000"
+    networks:
+      shared-network:
+        ipv4_address: 10.0.4.1
+
+  large_bts:
+    tty: true # 起動しっぱなし
+    build:
+      context: ../
+      dockerfile: src/BeaverTripleService/Dockerfile
+      target: large
+    expose:
+      - "54000"
+    networks:
+      shared-network:
+        ipv4_address: 10.0.4.1
+
+networks:
+  shared-network:
+    external: true

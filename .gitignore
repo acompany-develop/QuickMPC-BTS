@@ -1,0 +1,13 @@
+.DS_Store
+bazel-QuickMPC-BTS
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-tools
+.bazel
+
+src/BeaverTripleService/vendor
+src/BeaverTripleService/BeaverTripleService
+
+!.gitkeep
+result

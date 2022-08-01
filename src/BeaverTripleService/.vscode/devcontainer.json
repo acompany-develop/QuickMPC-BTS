@@ -1,0 +1,17 @@
+{
+    "name": "QuickMPC-BTS",
+    "dockerComposeFile": [
+        "docker-compose.yml"
+    ],
+    "workspaceFolder": "/QuickMPC-BTS",
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "go.gopath": "/usr/local/go",
+        "go.inferGopath": true,
+        "go.useLanguageServer": true
+    },
+    "remoteUser": "vscode",
+    "extensions": [
+        "ms-vscode.go"
+    ]
+}
