@@ -20,10 +20,10 @@ jobs:
 
       - name: Build CC image
         run: |
-          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/bts_dev:s${{ steps.date.outputs.date }}
-          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/bts_dev:stable
-          docker build ../../ --file Dockerfile --target medium --tag ghcr.io/${{ github.repository_owner }}/bts_medium:s${{ steps.date.outputs.date }}
-          docker build ../../ --file Dockerfile --target medium --tag ghcr.io/${{ github.repository_owner }}/bts_medium:stable
+          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
+          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable
+          docker build ../../ --file Dockerfile --target dep-runner --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}-alpine
+          docker build ../../ --file Dockerfile --target dep-runner --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable-alpine
         working-directory: ./src/BeaverTripleService/
 
       - name: Log into registry
@@ -31,10 +31,10 @@ jobs:
 
       - name: Push image
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/bts_dev:s${{ steps.date.outputs.date }}
-          docker push ghcr.io/${{ github.repository_owner }}/bts_dev:stable
-          docker push ghcr.io/${{ github.repository_owner }}/bts_medium:s${{ steps.date.outputs.date }}
-          docker push ghcr.io/${{ github.repository_owner }}/bts_medium:stable
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}-alpine
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable-alpine
 
   build_and_push:
     runs-on: ubuntu-latest
