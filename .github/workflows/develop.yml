@@ -15,17 +15,17 @@ jobs:
 
       - name: Build BeaverTripleService images
         run: |
-          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/bts_dev:${{ github.run_id }}
-          docker build ../../ --file Dockerfile --target medium --tag ghcr.io/${{ github.repository_owner }}/bts_medium:${{ github.run_id }}
+          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:${{ github.run_id }}
+          docker build ../../ --file Dockerfile --target dep-runner --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:${{ github.run_id }}-alpine
         working-directory: ./src/BeaverTripleService/
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
-      - name: Push image
+      - name: Push images
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/bts_dev:${{ github.run_id }}
-          docker push ghcr.io/${{ github.repository_owner }}/bts_medium:${{ github.run_id }}
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:${{ github.run_id }}
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:${{ github.run_id }}-alpine
 
   build_and_push:
     runs-on: ubuntu-latest
