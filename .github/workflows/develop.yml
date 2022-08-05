@@ -1,12 +1,9 @@
 name: Build BTS and Run Build and Test in Container
 
 on:
-  pull_request:
-    branches: [develop, master]
-
-env:
-  DOCKER_BUILDKIT: 1
-  COMPOSE_DOCKER_CLI_BUILD: 1
+  push:
+    branches:
+      - develop
 
 jobs:
   small_test_bts:
