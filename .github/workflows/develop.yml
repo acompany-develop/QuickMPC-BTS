@@ -1,4 +1,4 @@
-name: Build BTS and Run Build and Test in Container
+name: Push nightly BTS Image
 
 on:
   push:
