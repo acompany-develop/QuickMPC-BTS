@@ -2,7 +2,8 @@ name: Push Stable BTS Image
 
 on:
   push:
-    branches: [master]
+    branches:
+      - main
 
 jobs:
   # 外部から利用される安定バージョンのBTSイメージをpush
