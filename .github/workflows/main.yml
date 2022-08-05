@@ -1,0 +1,45 @@
+name: Push Stable BTS Images
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # 外部から利用される安定バージョンのBTSイメージをpush
+  build_and_push_bts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Set current date as env variable
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+
+      - name: Build BeaverTripleService images
+        run: |
+          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
+          docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable
+          docker build ../../ --file Dockerfile --target dep-runner --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}-alpine
+          docker build ../../ --file Dockerfile --target dep-runner --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable-alpine
+        working-directory: ./src/BeaverTripleService/
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+      - name: Push images
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}-alpine
+          docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable-alpine
+
+  build_and_push:
+    runs-on: ubuntu-latest
+    needs: [build_and_push_bts]
+
+    steps:
+      - name: Merge All build_and_push
+        run: echo "ok"
