@@ -1,4 +1,4 @@
-name: Push Stable BTS Image
+name: Push Stable BTS Images
 
 on:
   push:
@@ -18,7 +18,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y%m%d')"
 
-      - name: Build BeaverTripleService image
+      - name: Build BeaverTripleService images
         run: |
           docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
           docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable
@@ -29,7 +29,7 @@ jobs:
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
-      - name: Push image
+      - name: Push images
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
           docker push ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable

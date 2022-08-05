@@ -1,4 +1,4 @@
-name: Push nightly BTS Image
+name: Push nightly BTS Images
 
 on:
   push:
