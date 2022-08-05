@@ -67,3 +67,20 @@ make upd-build # バックグラウンドで起動したい場合はこちら
 その後, VSCodeの左タブから`Remote Explorer` > 上のトグルから`Containers`を選択 > `beavertripleservice`にカーソルを合わせる > 新規フォルダアイコンを選択 > 開く場所を選択してsrc_btsコンテナの中で開発が行えるようになる.
 
 ![image](https://user-images.githubusercontent.com/33140349/142567126-52b8e392-a81c-4630-bf6c-6f801653770a.png)
+
+## Container Image
+
+GitHub Packages のコンテナレジストリにイメージを用意している
+
+| tag             | description                                                    |
+|-----------------|----------------------------------------------------------------|
+| stable          | 最新安定版のイメージ                                           |
+| s${date}        | 日時: `${date}` に作成された安定版のイメージ                   |
+| stable-alpine   | `stable` の軽量イメージ                                        |
+| s${date}-alpine | `s${date}` の軽量イメージ                                      |
+| ${id}           | GitHub Actions の実行 ID: `${id}` で作成される開発版のイメージ |
+| ${id}-alpine    | `${id}` の軽量イメージ                                         |
+
+Dockerfile で使用される各 build stage については以下のリンクを参照
+
+[QuickMPC/Test/README.md#how-to-develop-docker-composeyml](https://github.com/acompany-develop/QuickMPC/blob/579ba7332caf75162a1ac6c425fb83c04655c095/Test/README.md#how-to-develop-docker-composeyml)
