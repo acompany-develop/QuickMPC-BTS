@@ -13,7 +13,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: Build CC image
+      - name: Build BeaverTripleService images
         run: |
           docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/bts_dev:${{ github.run_id }}
           docker build ../../ --file Dockerfile --target medium --tag ghcr.io/${{ github.repository_owner }}/bts_medium:${{ github.run_id }}
