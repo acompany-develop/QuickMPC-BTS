@@ -18,7 +18,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y%m%d')"
 
-      - name: Build CC image
+      - name: Build BeaverTripleService image
         run: |
           docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:s${{ steps.date.outputs.date }}
           docker build ../../ --file Dockerfile --target dev --tag ghcr.io/${{ github.repository_owner }}/quickmpc-bts:stable
