@@ -2,14 +2,19 @@ package e2bserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	cs "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/ConfigStore"
 	ts "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/TripleStore"
 	utils "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/Utils"
 	pb "github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts"
+	"github.com/golang-jwt/jwt"
 )
 
 type partyIdConuter struct {
@@ -124,3 +129,144 @@ func TestGetTriples_100_100(t *testing.T) { testGetTriples(t, 100, 100) } // 0.1
 func TestGetTriples_10000_1(t *testing.T)   { testGetTriples(t, 10000, 1) }   // 0.1s
 func TestGetTriples_10000_100(t *testing.T) { testGetTriples(t, 10000, 100) } // 10s
 // func TestGetTriples_10000_10000(t *testing.T) { testGetTriples(t, 10000, 10000) } // TO(10分以上)
+
+func TestAuthToken(t *testing.T) {
+	type testCase struct {
+		description string
+		alg         jwt.SigningMethod
+		claims      jwt.MapClaims
+		expected    error
+		encodeKey   string
+		decodeKey   string
+		envIss      string
+		envSub      string
+		envAud      string
+	}
+
+	tommorow := time.Now().Add(time.Hour * 24).Unix()
+
+	validClaim := jwt.MapClaims{
+		"exp": tommorow,
+		"aud": "https://qmpc-party1.run",
+		"iss": "QuickMPC-BTS",
+		"sub": "AccessToken",
+	}
+
+	merge := func(left, right jwt.MapClaims) jwt.MapClaims {
+		// Go だと shallow copy になるので非破壊的なmergeをしたい場合は新しいmapを用意する
+		m := jwt.MapClaims{}
+		for key, value := range left {
+			m[key] = value
+		}
+		for key, value := range right {
+			m[key] = value
+		}
+		return m
+	}
+
+	testcases := []testCase{
+		{
+			description: "validなJWTにはerrorを返さない",
+			alg:         jwt.SigningMethodHS256,
+			claims:      validClaim,
+			expected:    nil,
+			encodeKey:   "the-secret-key",
+			decodeKey:   "the-secret-key",
+			envIss:      validClaim["iss"].(string),
+			envSub:      validClaim["sub"].(string),
+			envAud:      validClaim["aud"].(string),
+		},
+		{
+			description: "algがHS256じゃないとerror",
+			alg:         jwt.SigningMethodHS512,
+			claims:      validClaim,
+			expected:    fmt.Errorf("unexpected signing method: HS512"),
+			encodeKey:   "the-secret-key",
+			decodeKey:   "the-secret-key",
+			envIss:      validClaim["iss"].(string),
+			envSub:      validClaim["sub"].(string),
+			envAud:      validClaim["aud"].(string),
+		},
+		{
+			description: "expが過ぎるとerror",
+			alg:         jwt.SigningMethodHS256,
+			claims:      merge(validClaim, jwt.MapClaims{"exp": time.Unix(1, 0)}),
+			expected:    fmt.Errorf("Token is expired"),
+			encodeKey:   "the-secret-key",
+			decodeKey:   "the-secret-key",
+			envIss:      validClaim["iss"].(string),
+			envSub:      validClaim["sub"].(string),
+			envAud:      validClaim["aud"].(string),
+		},
+		{
+			description: "HMACの鍵が違うとエラー",
+			alg:         jwt.SigningMethodHS256,
+			expected:    fmt.Errorf("signature is invalid"),
+			encodeKey:   "the-secret-key",
+			decodeKey:   "is-not-same-key",
+			envIss:      validClaim["iss"].(string),
+			envSub:      validClaim["sub"].(string),
+			envAud:      validClaim["aud"].(string),
+		},
+		{
+			description: "環境変数 JWT_ISS が用意したものと違う場合はエラー",
+			alg:         jwt.SigningMethodHS256,
+			claims:      validClaim,
+			expected:    fmt.Errorf("your token is unauthenticated"),
+			encodeKey:   "the-secret-key",
+			decodeKey:   "the-secret-key",
+			envIss:      "unexpected issuer",
+			envSub:      validClaim["sub"].(string),
+			envAud:      validClaim["aud"].(string),
+		},
+		{
+			description: "環境変数 JWT_SUB が用意したものと違う場合はエラー",
+			alg:         jwt.SigningMethodHS256,
+			claims:      validClaim,
+			expected:    fmt.Errorf("your token is unauthenticated"),
+			encodeKey:   "the-secret-key",
+			decodeKey:   "the-secret-key",
+			envIss:      validClaim["iss"].(string),
+			envSub:      "unexpected subject",
+			envAud:      validClaim["aud"].(string),
+		},
+		{
+			description: "環境変数 JWT_AUD が用意したものと違う場合はエラー",
+			alg:         jwt.SigningMethodHS256,
+			claims:      validClaim,
+			expected:    fmt.Errorf("your token is unauthenticated"),
+			encodeKey:   "the-secret-key",
+			decodeKey:   "the-secret-key",
+			envIss:      validClaim["iss"].(string),
+			envSub:      validClaim["sub"].(string),
+			envAud:      "unexpected audience",
+		},
+	}
+
+	for _, testcase := range testcases {
+		token := jwt.NewWithClaims(testcase.alg, testcase.claims)
+		tokenString, _ := token.SignedString([]byte(testcase.encodeKey))
+		os.Setenv("JWT_SECRET_KEY", testcase.decodeKey)
+		os.Setenv("JWT_ISS", testcase.envIss)
+		os.Setenv("JWT_SUB", testcase.envSub)
+		os.Setenv("JWT_AUD", testcase.envAud)
+
+		actual := AuthJWT(tokenString)
+
+		if actual != nil || testcase.expected != nil {
+			if actual == nil {
+				actual = errors.New("nil guard for actual")
+			}
+			if testcase.expected == nil {
+				testcase.expected = errors.New("nil guard for testcase.expected")
+			}
+			if !strings.Contains(actual.Error(), testcase.expected.Error()) {
+				t.Fatalf("%s: expected result is %v, but got %v", testcase.description, testcase.expected, actual)
+			}
+		}
+		os.Unsetenv("JWT_AUD")
+		os.Unsetenv("JWT_SUB")
+		os.Unsetenv("JWT_ISS")
+		os.Unsetenv("JWT_SECRET_KEY")
+	}
+}
