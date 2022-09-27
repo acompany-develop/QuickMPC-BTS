@@ -84,6 +84,7 @@ func btsAuthFunc(ctx context.Context) (context.Context, error) {
 		)
 	}
 
+	// TODO: AuthJWT should return claim info then add it to context
 	err = AuthJWT(tokenString)
 	if err != nil {
 		return nil, err
