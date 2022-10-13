@@ -251,7 +251,7 @@ func TestAuthToken(t *testing.T) {
 		os.Setenv("JWT_SUB", testcase.envSub)
 		os.Setenv("JWT_AUD", testcase.envAud)
 
-		actual := AuthJWT(tokenString)
+		actual := authJWT(tokenString)
 
 		if actual != nil || testcase.expected != nil {
 			if actual == nil {
