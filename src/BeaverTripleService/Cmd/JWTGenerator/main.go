@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -146,11 +147,25 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = store_client_env(path.Join(*output_dir, "client.sample.env"), signed_token_str)
+
+	base := path.Base(*filepath)
+	ext := path.Ext(base)
+	filename := base[:len(base)-len(ext)]
+
+	err = store_client_env(
+		path.Join(
+			*output_dir,
+			strings.Join([]string{"client", filename, "env"}, ".")),
+		signed_token_str)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = store_server_env(path.Join(*output_dir, "server.sample.env"), encoded_secrets, claim)
+
+	err = store_server_env(
+		path.Join(
+			*output_dir,
+			strings.Join([]string{"server", filename, "env"}, ".")),
+		encoded_secrets, claim)
 	if err != nil {
 		log.Fatalln(err)
 	}
