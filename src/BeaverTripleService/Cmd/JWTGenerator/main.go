@@ -46,17 +46,6 @@ func store_server_env(path string, secrets string, claim jwt_types.Claim) error 
 	defer writer.Flush()
 
 	fmt.Fprintf(writer, "JWT_SECRET_KEY=%s\n", secrets)
-	fmt.Fprintf(writer, "JWT_ISS=%s\n", claim.Issuer)
-	fmt.Fprintf(writer, "JWT_SUB=%s\n", claim.Subject)
-
-	// "aud" claim is list of string, so encode it
-	raw, err := json.Marshal(claim.Audience)
-	if err != nil {
-		return err
-	}
-
-	encoded_aud := base64.StdEncoding.EncodeToString(raw)
-	fmt.Fprintf(writer, "JWT_AUD=%s\n", encoded_aud)
 
 	return nil
 }
