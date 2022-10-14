@@ -6,7 +6,6 @@ replace github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts => ./../P
 
 require (
 	github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts v0.0.0-00010101000000-000000000000
-	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/uuid v1.3.0
