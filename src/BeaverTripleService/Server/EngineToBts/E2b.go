@@ -129,38 +129,7 @@ func authJWT(tokenString string) error {
 		return status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
 	}
 
-	claims := token.Claims.(jwt.MapClaims)
-
-	validateField := func(claimKey, envKey string) error {
-		err := status.Error(codes.Unauthenticated, "your token is unauthenticated")
-		if claim, ok := claims[claimKey]; ok {
-			if claim, ok := claim.(string); ok {
-				if envClaim, _ := os.LookupEnv(envKey); claim == envClaim {
-					return nil
-				}
-			}
-		}
-		return err
-	}
-
-	errorChain := func(errors ...error) error {
-		for _, err := range errors {
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	if err = errorChain(
-		validateField("iss", "JWT_ISS"),
-		validateField("sub", "JWT_SUB"),
-		validateField("aud", "JWT_AUD")); err != nil {
-		return err
-	}
-
 	return nil
-
 }
 
 // requestを受け取った際の共通処理
