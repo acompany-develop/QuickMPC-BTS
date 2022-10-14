@@ -14,7 +14,7 @@ import (
 	ts "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/TripleStore"
 	utils "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/Utils"
 	pb "github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type partyIdConuter struct {
