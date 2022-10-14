@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	cs "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/ConfigStore"
+	jwt_types "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/JWT"
 	logger "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/Log"
 	tg "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/TripleGenerator"
 	pb "github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts"
@@ -85,13 +86,12 @@ func btsAuthFunc(ctx context.Context) (context.Context, error) {
 		)
 	}
 
-	// TODO: AuthJWT should return claim info then add it to context
-	err = authJWT(tokenString)
+	claims, err := authJWT(tokenString)
 	if err != nil {
 		return nil, err
 	}
 
-	return ctx, nil
+	return context.WithValue(ctx, "claims", claims), nil
 }
 
 func getSecret() ([]byte, error) {
@@ -106,14 +106,13 @@ func getSecret() ([]byte, error) {
 	return secret, nil
 }
 
-func authJWT(tokenString string) error {
+func authJWT(tokenString string) (*jwt_types.Claim, error) {
 	jwtSecret, err := getSecret()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	parser := new(jwt.Parser)
-	token, err := parser.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt_types.Claim{}, func(token *jwt.Token) (interface{}, error) {
 		// alg を確認するのを忘れない
 		if signingMethod, ok := token.Method.(*jwt.SigningMethodHMAC); !ok || signingMethod.Alg() != "HS256" {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -122,14 +121,19 @@ func authJWT(tokenString string) error {
 	})
 
 	if err != nil {
-		return status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
 	}
 
 	if !token.Valid {
-		return status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+		return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
 	}
 
-	return nil
+	claims, ok := token.Claims.(*jwt_types.Claim)
+	if !ok {
+		return nil, status.Error(codes.Internal, "failed claims type assertions")
+	}
+
+	return claims, nil
 }
 
 // requestを受け取った際の共通処理
