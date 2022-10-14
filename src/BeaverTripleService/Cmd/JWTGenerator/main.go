@@ -21,7 +21,7 @@ import (
 )
 
 func store_client_env(path string, token string) error {
-	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0600)
+	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	defer fp.Close()
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func store_client_env(path string, token string) error {
 }
 
 func store_server_env(path string, secrets string, claim jwt_types.Claim) error {
-	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0600)
+	fp, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	defer fp.Close()
 	if err != nil {
 		return err
