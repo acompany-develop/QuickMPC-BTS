@@ -2,6 +2,7 @@ package e2bserver
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -138,18 +139,12 @@ func TestAuthToken(t *testing.T) {
 		expected    error
 		encodeKey   string
 		decodeKey   string
-		envIss      string
-		envSub      string
-		envAud      string
 	}
 
 	tommorow := time.Now().Add(time.Hour * 24).Unix()
 
 	validClaim := jwt.MapClaims{
 		"exp": tommorow,
-		"aud": "https://qmpc-party1.run",
-		"iss": "QuickMPC-BTS",
-		"sub": "AccessToken",
 	}
 
 	merge := func(left, right jwt.MapClaims) jwt.MapClaims {
@@ -172,9 +167,6 @@ func TestAuthToken(t *testing.T) {
 			expected:    nil,
 			encodeKey:   "the-secret-key",
 			decodeKey:   "the-secret-key",
-			envIss:      validClaim["iss"].(string),
-			envSub:      validClaim["sub"].(string),
-			envAud:      validClaim["aud"].(string),
 		},
 		{
 			description: "algがHS256じゃないとerror",
@@ -183,20 +175,14 @@ func TestAuthToken(t *testing.T) {
 			expected:    fmt.Errorf("unexpected signing method: HS512"),
 			encodeKey:   "the-secret-key",
 			decodeKey:   "the-secret-key",
-			envIss:      validClaim["iss"].(string),
-			envSub:      validClaim["sub"].(string),
-			envAud:      validClaim["aud"].(string),
 		},
 		{
 			description: "expが過ぎるとerror",
 			alg:         jwt.SigningMethodHS256,
-			claims:      merge(validClaim, jwt.MapClaims{"exp": time.Unix(1, 0)}),
-			expected:    fmt.Errorf("Token is expired"),
+			claims:      merge(validClaim, jwt.MapClaims{"exp": time.Unix(1, 0).Unix()}),
+			expected:    fmt.Errorf("token is expired"),
 			encodeKey:   "the-secret-key",
 			decodeKey:   "the-secret-key",
-			envIss:      validClaim["iss"].(string),
-			envSub:      validClaim["sub"].(string),
-			envAud:      validClaim["aud"].(string),
 		},
 		{
 			description: "HMACの鍵が違うとエラー",
@@ -204,54 +190,15 @@ func TestAuthToken(t *testing.T) {
 			expected:    fmt.Errorf("signature is invalid"),
 			encodeKey:   "the-secret-key",
 			decodeKey:   "is-not-same-key",
-			envIss:      validClaim["iss"].(string),
-			envSub:      validClaim["sub"].(string),
-			envAud:      validClaim["aud"].(string),
-		},
-		{
-			description: "環境変数 JWT_ISS が用意したものと違う場合はエラー",
-			alg:         jwt.SigningMethodHS256,
-			claims:      validClaim,
-			expected:    fmt.Errorf("your token is unauthenticated"),
-			encodeKey:   "the-secret-key",
-			decodeKey:   "the-secret-key",
-			envIss:      "unexpected issuer",
-			envSub:      validClaim["sub"].(string),
-			envAud:      validClaim["aud"].(string),
-		},
-		{
-			description: "環境変数 JWT_SUB が用意したものと違う場合はエラー",
-			alg:         jwt.SigningMethodHS256,
-			claims:      validClaim,
-			expected:    fmt.Errorf("your token is unauthenticated"),
-			encodeKey:   "the-secret-key",
-			decodeKey:   "the-secret-key",
-			envIss:      validClaim["iss"].(string),
-			envSub:      "unexpected subject",
-			envAud:      validClaim["aud"].(string),
-		},
-		{
-			description: "環境変数 JWT_AUD が用意したものと違う場合はエラー",
-			alg:         jwt.SigningMethodHS256,
-			claims:      validClaim,
-			expected:    fmt.Errorf("your token is unauthenticated"),
-			encodeKey:   "the-secret-key",
-			decodeKey:   "the-secret-key",
-			envIss:      validClaim["iss"].(string),
-			envSub:      validClaim["sub"].(string),
-			envAud:      "unexpected audience",
 		},
 	}
 
 	for _, testcase := range testcases {
 		token := jwt.NewWithClaims(testcase.alg, testcase.claims)
 		tokenString, _ := token.SignedString([]byte(testcase.encodeKey))
-		os.Setenv("JWT_SECRET_KEY", testcase.decodeKey)
-		os.Setenv("JWT_ISS", testcase.envIss)
-		os.Setenv("JWT_SUB", testcase.envSub)
-		os.Setenv("JWT_AUD", testcase.envAud)
+		os.Setenv("JWT_SECRET_KEY", base64.StdEncoding.EncodeToString([]byte(testcase.decodeKey)))
 
-		actual := authJWT(tokenString)
+		_, actual := authJWT(tokenString)
 
 		if actual != nil || testcase.expected != nil {
 			if actual == nil {
@@ -264,9 +211,7 @@ func TestAuthToken(t *testing.T) {
 				t.Fatalf("%s: expected result is %v, but got %v", testcase.description, testcase.expected, actual)
 			}
 		}
-		os.Unsetenv("JWT_AUD")
-		os.Unsetenv("JWT_SUB")
-		os.Unsetenv("JWT_ISS")
+
 		os.Unsetenv("JWT_SECRET_KEY")
 	}
 }
