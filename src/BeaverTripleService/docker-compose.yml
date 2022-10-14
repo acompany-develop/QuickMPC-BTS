@@ -16,6 +16,8 @@ services:
       - type: bind
         source: ../Proto
         target: /Proto
+    env_file:
+      - ./Cmd/JWTGenerator/sample/server.sample.env
     ports:
       - "127.0.0.1:64101:54100"
     networks:
