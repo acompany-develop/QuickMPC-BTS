@@ -2,6 +2,7 @@ package e2bserver
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"os"
@@ -93,12 +94,22 @@ func btsAuthFunc(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
+func getSecret() ([]byte, error) {
+	raw, ok := os.LookupEnv("JWT_SECRET_KEY")
+	if !ok {
+		return nil, status.Error(codes.Internal, "jwt auth key is not provided")
+	}
+	secret, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, err
+	}
+	return secret, nil
+}
+
 func authJWT(tokenString string) error {
-	var jwtSecret string
-	if s, ok := os.LookupEnv("JWT_SECRET_KEY"); ok {
-		jwtSecret = s
-	} else {
-		return status.Error(codes.Internal, "jwt auth key is not provided")
+	jwtSecret, err := getSecret()
+	if err != nil {
+		return err
 	}
 
 	parser := new(jwt.Parser)
