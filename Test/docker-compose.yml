@@ -59,8 +59,12 @@ services:
       context: ../
       dockerfile: src/BeaverTripleService/Dockerfile
       target: dep-runner
-    expose:
+    ports:
       - "50020:54000"
+    volumes:
+      - type: bind
+        source: ./../Config
+        target: /QuickMPC-BTS/Config
     command: [ "./BeaverTripleService" ]
 
 networks:
