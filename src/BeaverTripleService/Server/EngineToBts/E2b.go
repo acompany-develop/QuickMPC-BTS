@@ -2,19 +2,27 @@ package e2bserver
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	cs "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/ConfigStore"
+	jwt_types "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/JWT"
 	logger "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/Log"
 	tg "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/TripleGenerator"
 	pb "github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts"
@@ -58,6 +66,13 @@ func (s *server) GetTriples(ctx context.Context, in *pb.GetTriplesRequest) (*pb.
 		return nil, err
 	}
 	logger.Infof("Ip %s, jobId: %d, partyId: %d\n", reqIpAddrAndPort, in.GetJobId(), partyId)
+
+	// TODO: read claims, and use these party information
+	claims, ok := ctx.Value("claims").(*jwt_types.Claim)
+	if ok {
+		logger.Infof("claims: %v\n", claims)
+	}
+
 	triples, err := tg.GetTriples(in.GetJobId(), partyId, in.GetAmount())
 	if err != nil {
 		return nil, err
@@ -66,6 +81,66 @@ func (s *server) GetTriples(ctx context.Context, in *pb.GetTriplesRequest) (*pb.
 	return &pb.GetTriplesResponse{
 		Triples: triples,
 	}, nil
+}
+
+func btsAuthFunc(ctx context.Context) (context.Context, error) {
+	tokenString, err := grpc_auth.AuthFromMD(ctx, "bearer")
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Unauthenticated,
+			"could not read auth token: %v",
+			err,
+		)
+	}
+
+	claims, err := authJWT(tokenString)
+	if err != nil {
+		return nil, err
+	}
+
+	return context.WithValue(ctx, "claims", claims), nil
+}
+
+func getSecret() ([]byte, error) {
+	raw, ok := os.LookupEnv("JWT_SECRET_KEY")
+	if !ok {
+		return nil, status.Error(codes.Internal, "jwt auth key is not provided")
+	}
+	secret, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, err
+	}
+	return secret, nil
+}
+
+func authJWT(tokenString string) (*jwt_types.Claim, error) {
+	jwtSecret, err := getSecret()
+	if err != nil {
+		return nil, err
+	}
+
+	token, err := jwt.ParseWithClaims(tokenString, &jwt_types.Claim{}, func(token *jwt.Token) (interface{}, error) {
+		// alg を確認するのを忘れない
+		if signingMethod, ok := token.Method.(*jwt.SigningMethodHMAC); !ok || signingMethod.Alg() != "HS256" {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+	}
+
+	if !token.Valid {
+		return nil, status.Errorf(codes.Unauthenticated, "invalid auth token: %v", err)
+	}
+
+	claims, ok := token.Claims.(*jwt_types.Claim)
+	if !ok {
+		return nil, status.Error(codes.Internal, "failed claims type assertions")
+	}
+
+	return claims, nil
 }
 
 // requestを受け取った際の共通処理
@@ -103,7 +178,12 @@ func RunServer() {
 				PermitWithoutStream: true,
 			},
 		),
-		grpc.UnaryInterceptor(unaryInterceptor),
+		grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				grpc_auth.UnaryServerInterceptor(btsAuthFunc),
+				unaryInterceptor,
+			),
+		),
 	)
 
 	pb.RegisterEngineToBtsServer(s, &server{})
