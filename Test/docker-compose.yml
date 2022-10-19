@@ -59,6 +59,8 @@ services:
       context: ../
       dockerfile: src/BeaverTripleService/Dockerfile
       target: dep-runner
+    env_file:
+      - ../Config/server.sample.env
     ports:
       - "50020:54000"
     volumes:
