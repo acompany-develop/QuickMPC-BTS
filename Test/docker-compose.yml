@@ -53,6 +53,22 @@ services:
       shared-network:
         ipv4_address: 10.0.4.1
 
+  dep_bts:
+    tty: true # 起動しっぱなし
+    build:
+      context: ../
+      dockerfile: src/BeaverTripleService/Dockerfile
+      target: dep-runner
+    env_file:
+      - ../Config/server.sample.env
+    ports:
+      - "50020:54000"
+    volumes:
+      - type: bind
+        source: ./../Config
+        target: /QuickMPC-BTS/Config
+    command: [ "./BeaverTripleService" ]
+
 networks:
   shared-network:
     external: true
