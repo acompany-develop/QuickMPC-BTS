@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
-	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -59,8 +59,9 @@ var GetPartyIdFromIp = func(reqIpAddrAndPort string) (uint32, error) {
 }
 
 func (s *server) GetTriples(ctx context.Context, in *pb.GetTriplesRequest) (*pb.GetTriplesResponse, error) {
-	p, _ := peer.FromContext(ctx)
-	reqIpAddrAndPort := p.Addr.String()
+	// ClientのIPアドレスを取得
+	md, _ := metadata.FromIncomingContext(ctx)
+	reqIpAddrAndPort := md["x-forwarded-for"][0] + ":54000"
 	partyId, err := GetPartyIdFromIp(reqIpAddrAndPort)
 	if err != nil {
 		return nil, err
