@@ -10,8 +10,8 @@ import (
 )
 
 var Db *ts.SafeTripleStore
-var randMax = int64(1000)
-var randMin = int64(-1000)
+var randMax = int64(1 << 60)
+var randMin = int64(-1 << 60)
 
 func init() {
 	Db = ts.GetInstance()
