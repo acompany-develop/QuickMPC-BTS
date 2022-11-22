@@ -10,15 +10,17 @@ import (
 )
 
 var Db *ts.SafeTripleStore
-var randMax = int64(1 << 60)
-var randMin = int64(-1 << 60)
+var tripleRandMax = int64(1000)
+var tripleRandMin = int64(-1000)
+var sharizeRandMax = int64(1 << 60)
+var sharizeRandMin = int64(-1 << 60)
 
 func init() {
 	Db = ts.GetInstance()
 }
 
 func sharize(data int64, size uint32) ([]int64, error) {
-	shares, err := utils.GetRandInt64Slice(uint64(size-1), randMin, randMax)
+	shares, err := utils.GetRandInt64Slice(uint64(size-1), sharizeRandMin, sharizeRandMax)
 	if err != nil {
 		errText := "乱数取得に失敗"
 		logger.Error(errText)
@@ -38,7 +40,7 @@ func GenerateTriples(amount uint32) (map[uint32]([]*ts.Triple), error) {
 	ret := make(map[uint32]([]*ts.Triple))
 
 	for i := uint32(0); i < amount; i++ {
-		randInt64Slice, err := utils.GetRandInt64Slice(2, randMin, randMax)
+		randInt64Slice, err := utils.GetRandInt64Slice(2, tripleRandMin, tripleRandMax)
 		if err != nil {
 			errText := "乱数取得に失敗"
 			logger.Error(errText)
