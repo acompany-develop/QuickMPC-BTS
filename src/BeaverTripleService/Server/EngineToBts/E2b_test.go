@@ -56,7 +56,7 @@ func testGetTriplesByJobIdAndPartyId(t *testing.T, client pb.EngineToBtsClient, 
 	t.Run(fmt.Sprintf("testGetTriples_Party%d", partyId), func(t *testing.T) {
 		t.Helper()
 		t.Parallel()
-		result, err := client.GetTriples(context.Background(), &pb.GetTriplesRequest{JobId: jobId, Amount: amount})
+		result, err := client.GetTriples(context.Background(), &pb.GetTriplesRequest{JobId: jobId, Amount: amount, TripleType: pb.Type_TYPE_FIXEDPOINT})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,6 +130,19 @@ func TestGetTriples_100_100(t *testing.T) { testGetTriples(t, 100, 100) } // 0.1
 func TestGetTriples_10000_1(t *testing.T)   { testGetTriples(t, 10000, 1) }   // 0.1s
 func TestGetTriples_10000_100(t *testing.T) { testGetTriples(t, 10000, 100) } // 10s
 // func TestGetTriples_10000_10000(t *testing.T) { testGetTriples(t, 10000, 10000) } // TO(10分以上)
+
+// TripleTypeを指定しない場合にエラーが出るかテスト
+func TestGetTriplesFailedUnknownType(t *testing.T) {
+	conn := s.GetConn()
+	defer conn.Close()
+	client := pb.NewEngineToBtsClient(conn)
+
+	_, err := client.GetTriples(context.Background(), &pb.GetTriplesRequest{JobId: 0, Amount: 1})
+
+	if err == nil {
+		t.Fatal("TripleTypeの指定がないRequestはエラーを出す必要があります．")
+	}
+}
 
 func TestAuthToken(t *testing.T) {
 	type testCase struct {
