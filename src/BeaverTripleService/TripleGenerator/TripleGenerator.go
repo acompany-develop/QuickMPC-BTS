@@ -14,6 +14,8 @@ var Db *ts.SafeTripleStore
 var tripleRandMax = int64(1000)
 var tripleRandMin = int64(-1000)
 
+// floatの場合の乱数範囲はエンジン側のgetRandShareに依存している
+// 他の用途で使用する場合は範囲を再検討，もしくは分岐を再設計する
 var sharizeRandMinMap = map[pb.Type]int64{
 	pb.Type_TYPE_FLOAT:      -1000,
 	pb.Type_TYPE_FIXEDPOINT: int64(-1 << 60),
