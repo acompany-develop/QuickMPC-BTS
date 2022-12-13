@@ -15,11 +15,11 @@ var tripleRandMax = int64(1000)
 var tripleRandMin = int64(-1000)
 
 var sharizeRandMinMap = map[pb.Type]int64{
-	pb.Type_TYPE_FLOAT:      -100,
+	pb.Type_TYPE_FLOAT:      -1000,
 	pb.Type_TYPE_FIXEDPOINT: int64(-1 << 60),
 }
 var sharizeRandMaxMap = map[pb.Type]int64{
-	pb.Type_TYPE_FLOAT:      100,
+	pb.Type_TYPE_FLOAT:      1000,
 	pb.Type_TYPE_FIXEDPOINT: int64(1 << 60),
 }
 
