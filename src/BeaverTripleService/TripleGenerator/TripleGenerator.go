@@ -7,19 +7,36 @@ import (
 	logger "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/Log"
 	ts "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/TripleStore"
 	utils "github.com/acompany-develop/QuickMPC-BTS/src/BeaverTripleService/Utils"
+	pb "github.com/acompany-develop/QuickMPC-BTS/src/Proto/EngineToBts"
 )
 
 var Db *ts.SafeTripleStore
 var tripleRandMax = int64(1000)
 var tripleRandMin = int64(-1000)
-var sharizeRandMax = int64(1 << 60)
-var sharizeRandMin = int64(-1 << 60)
+
+// floatの場合の乱数範囲はエンジン側のgetRandShareに依存している
+// 他の用途で使用する場合は範囲を再検討，もしくは分岐を再設計する
+var sharizeRandMinMap = map[pb.Type]int64{
+	pb.Type_TYPE_FLOAT:      -1000,
+	pb.Type_TYPE_FIXEDPOINT: int64(-1 << 60),
+}
+var sharizeRandMaxMap = map[pb.Type]int64{
+	pb.Type_TYPE_FLOAT:      1000,
+	pb.Type_TYPE_FIXEDPOINT: int64(1 << 60),
+}
 
 func init() {
 	Db = ts.GetInstance()
 }
 
-func sharize(data int64, size uint32) ([]int64, error) {
+func sharize(data int64, size uint32, triple_type pb.Type) ([]int64, error) {
+	if triple_type == pb.Type_TYPE_UNKNOWN {
+		errText := "RequestにTripleの型情報が含まれていません．"
+		logger.Error(errText)
+		return nil, errors.New(errText)
+	}
+	sharizeRandMin := sharizeRandMinMap[triple_type]
+	sharizeRandMax := sharizeRandMaxMap[triple_type]
 	shares, err := utils.GetRandInt64Slice(uint64(size-1), sharizeRandMin, sharizeRandMax)
 	if err != nil {
 		errText := "乱数取得に失敗"
@@ -36,7 +53,7 @@ func sharize(data int64, size uint32) ([]int64, error) {
 	return shares, nil
 }
 
-func GenerateTriples(amount uint32) (map[uint32]([]*ts.Triple), error) {
+func GenerateTriples(amount uint32, triple_type pb.Type) (map[uint32]([]*ts.Triple), error) {
 	ret := make(map[uint32]([]*ts.Triple))
 
 	for i := uint32(0); i < amount; i++ {
@@ -51,15 +68,15 @@ func GenerateTriples(amount uint32) (map[uint32]([]*ts.Triple), error) {
 		b := randInt64Slice[1]
 		c := a * b
 
-		aShares, err := sharize(a, cs.Conf.PartyNum)
+		aShares, err := sharize(a, cs.Conf.PartyNum, triple_type)
 		if err != nil {
 			return nil, err
 		}
-		bShares, err := sharize(b, cs.Conf.PartyNum)
+		bShares, err := sharize(b, cs.Conf.PartyNum, triple_type)
 		if err != nil {
 			return nil, err
 		}
-		cShares, err := sharize(c, cs.Conf.PartyNum)
+		cShares, err := sharize(c, cs.Conf.PartyNum, triple_type)
 		if err != nil {
 			return nil, err
 		}
@@ -78,12 +95,12 @@ func GenerateTriples(amount uint32) (map[uint32]([]*ts.Triple), error) {
 	return ret, nil
 }
 
-func GetTriples(jobId uint32, partyId uint32, amount uint32) ([]*ts.Triple, error) {
+func GetTriples(jobId uint32, partyId uint32, amount uint32, triple_type pb.Type) ([]*ts.Triple, error) {
 	Db.Mux.Lock()
 	defer Db.Mux.Unlock()
 
 	if len(Db.Triples[jobId]) == 0 {
-		newTriples, err := GenerateTriples(amount)
+		newTriples, err := GenerateTriples(amount, triple_type)
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +113,7 @@ func GetTriples(jobId uint32, partyId uint32, amount uint32) ([]*ts.Triple, erro
 
 	// とあるパーティの複数回目のリクエストが、他パーティより先行されても対応できるように全パーティに triple をappendする
 	if !ok {
-		newTriples, err := GenerateTriples(amount)
+		newTriples, err := GenerateTriples(amount, triple_type)
 		if err != nil {
 			return nil, err
 		}
