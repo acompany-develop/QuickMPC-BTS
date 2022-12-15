@@ -67,11 +67,11 @@ services:
         target: /QuickMPC-BTS/Config
     ports:
       - "50020:54000"
-    # expose:
-    #   - "54000"
-    # depends_on:
-    #   bts_envoy:
-    #     condition: service_started
+    expose:
+      - "54000"
+    depends_on:
+      bts_envoy:
+        condition: service_started
     networks:
       shared-network:
         ipv4_address: 10.0.4.1
