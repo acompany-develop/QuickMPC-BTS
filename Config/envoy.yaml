@@ -41,6 +41,7 @@ static_resources:
                   - name: envoy.filters.http.router
                 use_remote_address: true
                 skip_xff_append: false
+      # TLS を用いて通信を行う場合コメントを外す
       # transport_socket:
       #   name: envoy.transport_sockets.tls
       #   typed_config:
