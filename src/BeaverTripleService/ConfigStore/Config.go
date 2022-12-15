@@ -16,6 +16,7 @@ type ConfigFormat struct {
 	Port             uint32
 	PartyNum         uint32
 	RequestPartyList []Party
+	WithEnvoy          bool
 }
 
 var Conf ConfigFormat

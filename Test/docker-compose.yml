@@ -61,13 +61,37 @@ services:
       target: dep-runner
     env_file:
       - ../Config/server.sample.env
-    ports:
-      - "50020:54000"
     volumes:
       - type: bind
         source: ./../Config
         target: /QuickMPC-BTS/Config
+    ports:
+      - "50020:54000"
+    expose:
+      - "54000"
+    depends_on:
+      bts_envoy:
+        condition: service_started
+    networks:
+      shared-network:
+        ipv4_address: 10.0.4.1
     command: [ "./BeaverTripleService" ]
+
+  bts_envoy:
+    tty: true # 起動しっぱなし
+    image: envoyproxy/envoy:v1.17.1
+    volumes:
+      - type: bind
+        source: ../Config/envoy.yaml
+        target: /etc/envoy/envoy.yaml
+    expose:
+      - "9901"
+    ports:
+      - "0.0.0.0:51020:51020"
+    networks:
+      shared-network:
+        ipv4_address: 10.0.1.21
+    command: ["/bin/sh", "-c", "/usr/local/bin/envoy -c /etc/envoy/envoy.yaml"]
 
 networks:
   shared-network:
