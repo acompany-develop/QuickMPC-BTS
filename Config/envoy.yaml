@@ -38,7 +38,6 @@ static_resources:
                         expose_headers: custom-header-1,grpc-status,grpc-message # access-control-expose-headers headerを指定
                 http_filters:
                   - name: envoy.filters.http.grpc_web # gRPC-Webクライアントを準拠したgRPCサーバーにブリッジできるようにするフィルター
-                  - name: envoy.filters.http.cors
                   - name: envoy.filters.http.router
                 use_remote_address: true
                 skip_xff_append: false
