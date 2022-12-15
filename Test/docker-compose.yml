@@ -66,7 +66,7 @@ services:
         source: ./../Config
         target: /QuickMPC-BTS/Config
     ports:
-      - "54000:54000"
+      - "50020:54000"
     # expose:
     #   - "54000"
     # depends_on:
@@ -87,7 +87,7 @@ services:
     expose:
       - "9901"
     ports:
-      - "0.0.0.0:50020:50020"
+      - "0.0.0.0:51020:50020"
     networks:
       shared-network:
         ipv4_address: 10.0.1.21
