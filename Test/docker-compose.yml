@@ -61,14 +61,14 @@ services:
       target: dep-runner
     env_file:
       - ../Config/server.sample.env
-    # expose:
-    #   - "54000"
-    ports:
-      - "54000:54000"
     volumes:
       - type: bind
         source: ./../Config
         target: /QuickMPC-BTS/Config
+    ports:
+      - "54000:54000"
+    # expose:
+    #   - "54000"
     # depends_on:
     #   bts_envoy:
     #     condition: service_started
