@@ -29,15 +29,7 @@ static_resources:
                         - match: { prefix: "/" } # "/"がリクエストのルートと一致
                           route:
                             cluster: cc_to_bts
-                      cors:
-                        allow_origin_string_match: # 許可されたorigin
-                          - prefix: "*"
-                        allow_methods: GET, PUT, DELETE, POST, OPTIONS
-                        allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,custom-header-1,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout
-                        max_age: "1728000" # access-control-max-age headerを指定
-                        expose_headers: custom-header-1,grpc-status,grpc-message # access-control-expose-headers headerを指定
                 http_filters:
-                  - name: envoy.filters.http.grpc_web # gRPC-Webクライアントを準拠したgRPCサーバーにブリッジできるようにするフィルター
                   - name: envoy.filters.http.router
                 use_remote_address: true
                 skip_xff_append: false
