@@ -87,7 +87,7 @@ services:
     expose:
       - "9901"
     ports:
-      - "0.0.0.0:51020:50020"
+      - "0.0.0.0:51020:51020"
     networks:
       shared-network:
         ipv4_address: 10.0.1.21
