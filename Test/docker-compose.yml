@@ -61,16 +61,17 @@ services:
       target: dep-runner
     env_file:
       - ../Config/server.sample.env
+    # expose:
+    #   - "54000"
     ports:
       - "54000:54000"
     volumes:
       - type: bind
         source: ./../Config
         target: /QuickMPC-BTS/Config
-    depends_on:
-      bts_envoy:
-        condition: service_started
-      
+    # depends_on:
+    #   bts_envoy:
+    #     condition: service_started
     networks:
       shared-network:
         ipv4_address: 10.0.4.1
